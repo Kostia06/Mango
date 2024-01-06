@@ -74,6 +74,11 @@ static Flag flags[25] = {
     {"-t",    "",                                                 "time the build and autorun"},
     {"-cdd",  "<dir>",                                            "change the default directory"},
     {"-s",    "",                                                 "save all commands to a .mango file"},
+    {"-ln",   "<from dir> <to dir> <name>",                       "link a folder to a directory"},
+    {"-cp",   "<from dir> <to dir> <name>",                       "copy a folder to a directory"},
+    {"-git",  "<dir> <SSH Git Link>",                             "set up git in the current directory"},
+    {"-push", "<commit name>",                                    "push to git"},
+    {"-pull", "",                                                 "pull from git"},
     {NULL,    NULL,                                               NULL}
 };
 
@@ -116,3 +121,7 @@ long    get_time();
 char*   time_to_string(long time);
 // remove part of a string based of a other string
 char*   str_remove(char *str, const char *sub);
+// search for a file in a current directory
+int     search_file(const char* path, const char* file);
+// get correct path
+char*   get_dir(char* path);

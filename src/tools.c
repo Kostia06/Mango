@@ -220,3 +220,24 @@ char *str_remove(char *str, const char *sub) {
     }
     return str;
 }
+
+
+int search_file(const char* path, const char* file){
+    DIR* dir = opendir(path);
+    struct dirent* entry;
+    while((entry = readdir(dir)) != NULL){
+        if(entry->d_type == DT_REG || entry->d_type == DT_DIR){
+            if(!strcmp(entry->d_name, file) ){ return 1; }
+        }
+    }
+    return 0;
+}
+
+char* get_dir(char* path){
+    char* new_path = NULL;
+    char* dir_1 = path;
+    char* dir_2 = combine_dir(builder.default_directory, dir_1);
+    if(check_dir(dir_2)){new_path = dir_2;}
+    else if(check_dir(dir_1) || !strcmp(dir_1, "")){new_path = dir_1;}
+    return new_path;
+}

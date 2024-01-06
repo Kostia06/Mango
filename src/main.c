@@ -51,19 +51,9 @@ static void run_default(char* builder_path, char* path){
     }
     // loop through all of the files
     FILE* f = NULL;
-    DIR* dir = opendir(path);
-    struct dirent* entry;
     printf("%sSearching for %s in %s%s\n",YELLOW, BUILDER_NAME,path, RESET);
-    while((entry = readdir(dir)) != NULL){
-        if(entry->d_type == DT_REG){
-            if(strcmp(entry->d_name, BUILDER_NAME) == 0){ 
-                printf("%sFound %s%s\n",GREEN,entry->d_name,RESET);
-                f = fopen(combine_dir(path,entry->d_name), "r"); 
-                break; 
-            }
-        }
-    }
-    if(f == NULL){ printf("%sERROR:%s No \"%s\" file found in %s%s\n",RED,WHITE, BUILDER_NAME,path, RESET); exit(1); }
+    if(search_file(path, BUILDER_NAME)){ f = fopen(combine_dir(path,BUILDER_NAME), "r"); }
+    else{ printf("%sERROR:%s No \"%s\" file found in %s%s\n",RED,WHITE, BUILDER_NAME,path, RESET); exit(1); }
     // get the first line
     char* line = malloc(sizeof(char) * 1024);
     size_t line_size = 1024;
@@ -95,18 +85,20 @@ int main(int argc, char *argv[]){
         .save = 0,
     };
     // loop through all of the arguments
-    if(argc == 2){ run_default(argv[0], argv[1]); return 0; }
+    if(argc == 2 && argv[1][0] != '-'){ run_default(argv[0], argv[1]); return 0; }
+    if(argc == 1){ help(argv[0]); return 0; }
     size_t i = 1;
     while(i < argc){
         add_cmd(argv[i]);   
         if(check_arg(argv[0],"-h",    argv[i], argc, i, 0)){ help(argv[0]); }
-        else if(check_arg(argv[0],"-o",    argv[i], argc, i, 1)){ builder.output = argv[++i]; }
-        else if(check_arg(argv[0],"-c",    argv[i], argc, i, 1)){ builder.compiler = argv[++i]; }
-        else if(check_arg(argv[0],"-af",   argv[i], argc, i, 1)){ check_file(argv[++i]); add_file(argv[i]); }
-        else if(check_arg(argv[0],"-aff",  argv[i], argc, i, 1)){ add_flag(argv[++i]); }
-        else if(check_arg(argv[0],"-tb", argv[i], argc, i, 0)){ builder.time_build = 1; }
-        else if(check_arg(argv[0],"-ar",   argv[i], argc, i, 0)){ builder.autorun = 1; }
-        else if(check_arg(argv[0],"-rf",   argv[i], argc, i, 1)){ 
+        else if(check_arg(argv[0],"-o",     argv[i], argc, i, 1)){ builder.output = argv[++i]; }
+        else if(check_arg(argv[0],"-c",     argv[i], argc, i, 1)){ builder.compiler = argv[++i]; }
+        else if(check_arg(argv[0],"-af",    argv[i], argc, i, 1)){ check_file(argv[++i]); add_file(argv[i]); }
+        else if(check_arg(argv[0],"-aff",   argv[i], argc, i, 1)){ add_flag(argv[++i]); }
+        else if(check_arg(argv[0],"-tb",    argv[i], argc, i, 0)){ builder.time_build = 1; }
+        else if(check_arg(argv[0],"-ar",    argv[i], argc, i, 0)){ builder.autorun = 1; }
+        else if(check_arg(argv[0],"-s",     argv[i], argc, i, 0)){ builder.save = 1; }
+        else if(check_arg(argv[0],"-rf",    argv[i], argc, i, 1)){ 
             size_t files_size = 0;
             char** files = get_args(argv, argc, ++i, &files_size);
             i += files_size - 1;
@@ -154,8 +146,7 @@ int main(int argc, char *argv[]){
             char* dir = combine_dir(builder.default_directory,argv[++i]);
             if(!check_dir(dir)){
                 printf("%sERROR:%s Directory \"%s\" not found%s\n",RED,WHITE, dir, RESET);
-                error = 1;
-                i++; continue;
+                goto end_error;
             }
             add_cmd(argv[i]);
             size_t exts_size = 0;
@@ -163,14 +154,12 @@ int main(int argc, char *argv[]){
             i += exts_size - 1;
             if(exts_size == 0){
                 printf("%sERROR:%s No extention given%s\n",RED,WHITE, RESET);
-                error = 1;
-                i++; continue;
+                goto end_error;
             }
             for(int j = 0; j < exts_size; j++){
                 if(exts[j][0] != '.'){
                     printf("%sERROR:%s Extention \"%s\" must start with a \".\"%s\n",RED,WHITE, exts[j], RESET);
-                    error = 1;
-                    i++; continue;
+                    goto end_error;
                 }
                 add_cmd(exts[j]);
             }
@@ -208,15 +197,10 @@ int main(int argc, char *argv[]){
             builder.time_build = 1; builder.time_run = 1;
         }
         else if(check_arg(argv[0],"-cdd", argv[i], argc, i, 1)){
-            char* new_dir = NULL;
-            char* dir_1 = argv[++i];
-            char* dir_2 = combine_dir(builder.default_directory, dir_1);
-            if(check_dir(dir_2)){new_dir = dir_2;}
-            else if(check_dir(dir_1) || !strcmp(dir_1, "")){new_dir = dir_1;}
-            else{
-                printf("%sERROR:%s Directory \"%s\" nor \"%s\" not found%s\n",RED,WHITE, dir_1,dir_2, RESET);
-                error = 1;
-                i++; continue;
+            char* new_dir = get_dir(argv[++i]);
+            if(!new_dir){
+                printf("%sERROR:%s Directory \"%s\" not found%s\n",RED,WHITE, argv[i-1], RESET);
+                goto end_error;
             }
             add_cmd(new_dir);
             builder.default_directory = new_dir;
@@ -227,18 +211,95 @@ int main(int argc, char *argv[]){
             }
             builder.delete_executable = 1;
         }
-        else if(check_arg(argv[0],"-s", argv[i], argc, i, 0)){ builder.save = 1; }
+        else if(check_arg(argv[0], "-ln", argv[i], argc, i , 3)){
+            char* from = get_dir(argv[++i]);
+            char* to = get_dir(argv[++i]);
+            char* name = argv[++i];
+            if(!from){
+                printf("%sERROR:%s File \"%s\" not found%s\n",RED,WHITE, argv[i-2], RESET);
+                goto end_error;
+            }
+            if(!to){
+                printf("%sERROR:%s File \"%s\" not found%s\n",RED,WHITE, argv[-1], RESET);
+                goto end_error;
+            }
+            to = combine_dir(to, name);
+            printf("%sLinking:%s %s -> %s%s\n",YELLOW,WHITE,from,to,RESET);
+            symlink(from, to);
+        }
+        else if(check_arg(argv[0], "-git", argv[i], argc, i , 2)){
+            char* dir = get_dir(argv[++i]);
+            char* link = argv[++i];
+            int found = search_file(dir, ".git");
+            if(found){
+                printf("%sWARNING:%s Already a git repository%s\n",MAGENTA,WHITE,RESET);
+            }
+            else{
+                char* command = malloc(sizeof(char) * (strlen(dir) + 10));
+                sprintf(command, "git init %s", dir);
+                printf("%sRunning:%s in %s%s%s\n",YELLOW,WHITE,command,dir,RESET);
+                int result = system(command);
+                if(!(result != -1 && result == 0)){ 
+                    result = system("git --version");
+                    if(result != -1 && result == 0){ printf("%sGit is not installed%s\n",RED,RESET); }
+                    else{ printf("%sFailed to create git repository%s\n",RED,RESET); }
+                    goto end_error;
+                }
+                printf("%sGit repository created%s\n",GREEN,RESET); 
+                // add branch
+                printf("%sAdding branch%s\n",YELLOW,RESET);
+                command = malloc(sizeof(char) * (strlen(dir) + 10));
+                sprintf(command, "cd %s && git checkout -b main", dir);
+                result = system(command);
+                if(result != -1 && result == 0){ printf("%sBranch created%s\n",GREEN,RESET); }
+                else{ printf("%sFailed to create branch%s\n",RED,RESET); goto end_error; }
+                // add origin
+                printf("%sAdding origin%s\n",YELLOW,RESET);
+                command = malloc(sizeof(char) * (strlen(dir) + strlen(link) + 10));
+                sprintf(command, "cd %s && git remote add origin %s", dir, link);
+                result = system(command);
+                if(result != -1 && result == 0){ printf("%sOrigin added%s\n",GREEN,RESET); }
+                else{ printf("%sFailed to add origin%s\n",RED,RESET); goto end_error; }
+                // add .gitignore
+                printf("%sAdding .gitignore%s\n",YELLOW,RESET);
+                command = malloc(sizeof(char) * (strlen(dir) + 10));
+                sprintf(command, "cd %s && touch .gitignore", dir);
+                result = system(command);
+                if(result != -1 && result == 0){ printf("%s.gitignore added%s\n",GREEN,RESET); }
+                else{ printf("%sFailed to add .gitignore%s\n",RED,RESET); goto end_error; }
+            }
+        }
+        else if(check_arg(argv[0], "-push", argv[i], argc, i, 1)){
+            char* commit = argv[++i];
+            char* command = malloc(sizeof(char) * (strlen(builder.default_directory) + strlen(commit) + 20));
+            sprintf(command, "cd %s && git add . && git commit -m \"%s\" && git push -u origin main", builder.default_directory, commit);
+            printf("%sRunning:%s %s%s\n",YELLOW,WHITE,command,RESET);
+            int result = system(command);
+            if(result != -1 && result == 0){ printf("%sPushed to git repository%s\n",GREEN,RESET); }
+            else{ printf("%sFailed to push to git repository%s\n",RED,RESET); }
+        }
+        else if(check_arg(argv[0], "-pull", argv[i], argc, i, 0)){
+            char* command = malloc(sizeof(char) * (strlen(builder.default_directory) + 20));
+            sprintf(command, "cd %s && git pull origin main", builder.default_directory);
+            printf("%sRunning:%s %s%s\n",YELLOW,WHITE,command,RESET);
+            int result = system(command);
+            if(result != -1 && result == 0){ printf("%sPulled from git repository%s\n",GREEN,RESET); }
+            else{ printf("%sFailed to pull from git repository%s\n",RED,RESET); }
+        }
         else{
             if(argv[i][0] == '-'){ 
                 printf("%sERROR:%s Invalid flag \"%s\"\n%s",RED,WHITE, argv[i], WHITE); 
                 error = 1;
-            }
+            }   
             else{ 
                 printf("%sERROR:%s Invalid argument \"%s\"\n%s",RED,WHITE, argv[i], RESET);
                 error = 1;
             }
         }
         i++;
+        end_error:
+            i++;
+            error = 1;
     }
     // compile
     long build_start = get_time();

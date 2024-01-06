@@ -30,7 +30,7 @@ include_linked() {
 }
 
 CC="clang"
-NAME="main"
+NAME="mango"
 #INCLUDE=$(include_linked "../src/ctools")
 SRC=$(get_files "../src" $FILE_EXT)
 C_FLAGS=""
