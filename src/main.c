@@ -91,6 +91,7 @@ int main(int argc, char *argv[]){
     while(i < argc){
         add_cmd(argv[i]);   
         if(check_arg(argv[0],"-h",    argv[i], argc, i, 0)){ help(argv[0]); }
+        else if(check_arg(argv[0],"-v",     argv[i], argc, i, 0)){ printf("%sVersion:%s %s%s\n",YELLOW,WHITE,VERSION,RESET); }
         else if(check_arg(argv[0],"-o",     argv[i], argc, i, 1)){ builder.output = argv[++i]; }
         else if(check_arg(argv[0],"-c",     argv[i], argc, i, 1)){ builder.compiler = argv[++i]; }
         else if(check_arg(argv[0],"-af",    argv[i], argc, i, 1)){ check_file(argv[++i]); add_file(argv[i]); }
@@ -297,6 +298,7 @@ int main(int argc, char *argv[]){
             }
         }
         i++;
+        continue;
         end_error:
             i++;
             error = 1;

@@ -8,6 +8,7 @@
 #include <sys/time.h>
 
 #define     BUILDER_NAME   ".mango"
+#define     VERSION        "1.0.0"
 
 #define     RESET   "\033[0m"
 #define     WHITE   "\033[1m\033[37m"
@@ -54,8 +55,9 @@ typedef struct{
 Builder builder;
 static int error = 0;
 
-static Flag flags[25] = { 
+static Flag flags[30] = { 
     {"-h",    "",                                                 "help"},
+    {"-v",    "",                                                 "version"},
     {"-o",    "<name>",                                           "output file name"},
     {"-c",    "<name>",                                           "change compiler"},
     {"-af",   "<file>",                                           "add a file"},
