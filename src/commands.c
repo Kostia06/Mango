@@ -71,17 +71,6 @@ int add_file(char** argv, int argc, size_t* i){
     }
     return result;
 }
-// add flag to the builder
-void add_flag(char** argv, int argc, size_t* i){
-    size_t size = 0;
-    (*i)++;
-    char** flags = get_args(argv, argc, ++i, &size);
-    for(size_t j = 0; j < size; j++){ 
-        builder->flags = realloc(builder->flags, sizeof(char*) * (builder->flags_size + 1));
-        builder->flags[builder->flags_size++] = flags[j];
-        CMD_ARG(flags[j]);
-    }
-}
 // print all of the files
 void print_files(){
     printf("%sINFO: %sFiles:%s\n", YELLOW, WHITE, RESET);
@@ -119,17 +108,27 @@ int add_files(char** argv, int argc, size_t* i){
     return 1;
 }
 // add all flags
-void add_flags(char** argv, int argc, size_t* i){
-    size_t size = 0;
+int add_flags(char** argv, int argc, size_t* i){
     (*i)++;
-    char** flags = get_args(argv, argc, i, &size);
-    for(size_t j = 0; j < size; j++){ 
+    char** flags = malloc(sizeof(char*));
+    size_t flags_size = 0;
+    while(strcmp(argv[*i], "-ffe") && *i < argc){
+        flags = realloc(flags, sizeof(char*) * (flags_size + 1));
+        flags[flags_size++] = argv[(*i)++];
+        CMD_ARG(flags[flags_size - 1]);
+    }
+    if(strcmp(argv[*i], "-ffe")){
+        printf("%sERROR:%s Expected \"-ffe\"%s\n",RED,WHITE,RESET);
+        return 0;
+    }
+    CMD_ARG("-ffe");
+    for(size_t j = 0; j < flags_size; j++){ 
         char* flag = flags[j];
         if(check_in(flag, builder->flags, builder->flags_size) != -1){ continue; }
         builder->flags = realloc(builder->flags, sizeof(char*) * (builder->flags_size + 1));
         builder->flags[builder->flags_size++] = flag;
-        CMD_ARG(flag);
     }
+    return 1;
 }
 // remove file(s)
 void remove_file(char** argv, int argc, size_t* i){
@@ -165,15 +164,28 @@ void remove_flag(char** argv, int argc, size_t* i){
     }
 }
 // add flags to the executable on run
-void add_run_flag(char** argv, int argc, size_t* i){
-    size_t size = 0;
+int add_run_flag(char** argv, int argc, size_t* i){
+    if(!builder->run){
+        printf("%sWARNING:%s Autorun is not enabled, meaning the run flags won't be added%s\n",PINK,WHITE,RESET);
+    }
     (*i)++;
-    char** flags = get_args(argv, argc, i, &size);
-    for(size_t j = 0; j < size; j++){ 
+    char** flags = malloc(sizeof(char*));
+    size_t flags_size = 0;
+    while(strcmp(argv[*i], "-arffe") && *i < argc){
+        flags = realloc(flags, sizeof(char*) * (flags_size + 1));
+        flags[flags_size++] = argv[(*i)++];
+        CMD_ARG(flags[flags_size - 1]);
+    }
+    if(strcmp(argv[*i], "-arffe")){
+        printf("%sERROR:%s Expected \"-arffe\"%s\n",RED,WHITE,RESET);
+        return 0;
+    }
+    CMD_ARG("-arffe");
+    for(size_t j = 0; j < flags_size; j++){      
         builder->run_flags = realloc(builder->run_flags, sizeof(char*) * (builder->run_flags_size + 1));
         builder->run_flags[builder->run_flags_size++] = flags[j];
-        CMD_ARG(flags[j]);
     }
+    return 1;
 }
 // link folder to the default directory
 int ln(char** argv, int argc, size_t* i){
@@ -195,14 +207,17 @@ int ln(char** argv, int argc, size_t* i){
     CMD_ARG(from);
     CMD_ARG(to);
     CMD_ARG(name);
+    printf("%sLinked:%s %s%s\n",YELLOW,WHITE,from,RESET);
     return 1;
 }
 // copy
 int copy(char** argv, int argc, size_t* i){
-    char* from = get_dir(argv[++(*i)]);
+    char* from_dir = get_dir(argv[++(*i)]);
+    char* from_file = get_file(argv[*i]);
     char* to = get_dir(argv[++(*i)]);
     char* name = argv[++(*i)];
     int result = 1;
+    char* from = from_dir ? from_dir : from_file;
     if(!from){
         printf("%sERROR:%s From Folder \"%s\" not found%s\n",RED,WHITE, argv[*i-2], RESET);
         result =  0;
@@ -213,12 +228,16 @@ int copy(char** argv, int argc, size_t* i){
     }
     if(!result){ return 0; }
     to = combine_dir(to, name);
+    to = get_direct_dir(to);
+    from = get_direct_dir(from);
     char* command = malloc(sizeof(char) * (strlen(from) + strlen(to) + 10));
-    sprintf(command, "cp -r %s %s", from, to);
+    if(from_dir){ sprintf(command, "cp -r %s %s", from, to); }
+    else{ sprintf(command, "cp %s %s", from, to); }
     system(command);
     CMD_ARG(from);
     CMD_ARG(to);
     CMD_ARG(name);
+    printf("%sINFO: %sCopied from %s to %s%s\n",YELLOW,WHITE,from, to,RESET);
     return 1;
 }
 

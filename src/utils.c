@@ -45,11 +45,24 @@ char** get_args(char** argv, int argc, size_t* i, size_t* new_args_size){
 }
 // check if item is a flag
 int check_flag(char* flag){
-    size_t i = 0;
-    Flag f = flags[i];
+    size_t j = 0;
+    Flag f = flags[j];
     while(f.name != NULL){
-        if(!strcmp(flag, f.flag)){ return 1; }
-        f = flags[++i];
+        if(!strcmp(f.flag, flag)){ return 1; }
+        f = flags[j++];
+    }
+    f = flags[0]; j = 0;
+    while(f.name != NULL){
+        size_t flag_len = strlen(f.flag);
+        size_t arg_len = strlen(flag);
+        if(!strcmp(f.flag, flag)){ return 1; }
+        int k = 0, found = arg_len >= flag_len;
+        while(k < flag_len && found){  
+            if(flag[k] != f.flag[k]){ found = 0; break; }
+            k++;
+        }
+        if(found){ return 1; }
+        f = flags[++j];
     }
     return 0;
 }
@@ -189,9 +202,13 @@ char* into_string(char** array, size_t size){
 }
 // check if the string is a valid flag
 char** check_valid_flag(char* arg, char** argv, int* argc, size_t i){
-    if(check_flag(arg)){ return argv; }
     size_t j = 0;
     Flag f = flags[j];
+    while(f.name != NULL){
+        if(!strcmp(f.flag, arg)){ return argv; }
+        f = flags[j++];
+    }
+    f = flags[0]; j = 0;
     while(f.name != NULL){
         size_t flag_len = strlen(f.flag);
         size_t arg_len = strlen(arg);
@@ -224,10 +241,12 @@ char* get_direct_dir(char* path){
     char* new_path = malloc(sizeof(char));
     size_t new_path_size = 0;
     while(i < len){
-        if(i+2 < len && path[i] == '.' && path[i+1] == '.' && path[i+2] == '/'){ 
+        if(i != 0 && i+2 < len && path[i] == '.' && path[i+1] == '.' && path[i+2] == '/'){ 
             // remove the last directory
-            new_path = realloc(new_path, sizeof(char) * (new_path_size - 1));
-            new_path[new_path_size--] = '\0';
+            if(new_path_size > 0 && new_path[new_path_size - 1] == '/'){ 
+                new_path = realloc(new_path, sizeof(char) * (new_path_size - 1));
+                new_path[new_path_size--] = '\0';
+            } 
             while(new_path_size > 0 && new_path[new_path_size - 1] != '/'){ 
                 new_path = realloc(new_path, sizeof(char) * (new_path_size - 1));
                 new_path[new_path_size--] = '\0';

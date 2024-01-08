@@ -18,6 +18,7 @@ int build(){
         )
     );
     sprintf(command, "%s %s %s -o %s", builder->compiler,files, flags, builder->output);
+    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, command, RESET); }
     int result = system(command);
     if(result != -1 && result == 0){ printf("%sCompiled successfully into \"%s\"%s\n",GREEN, builder->output, RESET); }
     else{ printf("%sFailed to compile%s\n",RED,RESET); return 0; }
@@ -34,6 +35,7 @@ int run(){
         if(builder->output[0] == '/') sprintf(command, "%s %s", builder->output, run_flags);
         else{sprintf(command, "./%s %s", builder->output, run_flags);}
     #endif
+    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, command, RESET); }
     // run the command
     int result = system(command);
     if(result != -1 && result == 0){ printf("%sRan successfully%s\n",GREEN,RESET); }
@@ -57,10 +59,10 @@ void save(){
 }
 
 
-void run_default(char* builder_path, char* path){
+int run_default(char* builder_path, char* path){
     if(!is_dir(path)){
         printf("%sERROR:%s Directory \"%s\" not found%s\n",RED,WHITE, path, RESET);
-        exit(1);
+        return 0;
     }
     // loop through all of the files
     FILE* f = NULL;
@@ -81,4 +83,5 @@ void run_default(char* builder_path, char* path){
     char* command = malloc(sizeof(char) * (strlen(builder_path) + strlen(line) + 2));
     sprintf(command, "%s %s", builder_path, line);
     system(command);
+    return 1;
 }

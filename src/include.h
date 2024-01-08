@@ -68,7 +68,7 @@ typedef struct{
     char* dd, *cmd;
     char** files, **actual_files, **flags, **run_flags;
     size_t files_size, flags_size, run_flags_size;
-    int run, save, time_build, time_run, del;
+    int run, save, time_build, time_run, del, show_cmd;
 } Builder;
 
 Builder* builder;
@@ -87,16 +87,18 @@ static Flag flags[30] = {
     {"-tr",  "",                                                  "time the run of the executable"},
     {"-tb",   "",                                                 "time the build"},
     {"-r",   "",                                                  "will run the executable after building it"},
-    {"-af",   "<file>",                                           "add a file"},
-    {"-aff",  "<flag>",                                           "add a flag"},
+    {"-af",   "<file1> <file2> ...",                              "add a file(s)"},
     {"-pf",   "",                                                 "print all of the files"},
     {"-pff",  "",                                                 "print all of the flags"},
     {"-de",   "" ,                                                "delete executable after autorun"},
     {"-f",    "<dir> <file extention 1> <file extention 2> ...",  "add files(s)"},
     {"-ff",   "<flag1> <flag2> ...",                              "add flag(s)"},
+    {"-ffe", "",                                                  "end of add flag(s)"},
     {"-rf",   "<file1> <file2> ...",                              "remove file(s)"},
     {"-rff",  "<flag1> <flag2> ...",                              "remove flag(s)"},
     {"-arff", "<flag1> <flag2> ...",                              "add flag(s) to the autorun"},
+    {"-arffe","",                                                 "end of the flags"},
+    {"-scmd", "",                                                 "show the command"},
     {"-ln",   "<from dir> <to dir> <name>",                       "link a folder to a directory"},
     {"-cp",   "<from dir> <to dir> <name>",                       "copy a folder to a directory"},
     {"-git",  "<dir> <SSH Git Link>",                             "set up git in the current directory"},
@@ -109,21 +111,20 @@ static Flag flags[30] = {
 int build();
 int run();
 void save();
-void run_default(char* builder_path, char* path);
+int run_default(char* builder_path, char* path);
 // commands
 void help(char* file);
 int change_default_dir(char** argv, int argc, size_t* i);
 void time_everything();
 void time_run();
 int add_file(char** argv, int argc, size_t* i);
-void add_flag(char** argv, int argc, size_t* i);
 void print_files();
 void print_flags();
 int add_files(char** argv, int argc, size_t* i);
-void add_flags(char** argv, int argc, size_t* i);
+int add_flags(char** argv, int argc, size_t* i);
 void remove_file(char** argv, int argc, size_t* i);
 void remove_flag(char** argv, int argc, size_t* i);
-void add_run_flag(char** argv, int argc, size_t* i);
+int add_run_flag(char** argv, int argc, size_t* i);
 int ln(char** argv, int argc, size_t* i);
 int copy(char** argv, int argc, size_t* i);
 int git_init(char** argv, int argc, size_t* i);

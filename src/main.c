@@ -27,7 +27,12 @@ int main(int argc, char** old_argv){
     builder->save = 0;
     // delete the executable after running
     builder->del = 0;
+    // show commands
+    builder->show_cmd = 0;
     // if there is no flags
+    if(argc == 1 && is_file(combine_dir(builder->dd, BUILDER_NAME))){ 
+        if(run_default(argv[0], builder->dd)){ return 0; }
+    }
     if(argc == 1){ help(argv[0]); return 0; }
     // if there is one
     if(argc == 2 && !check_flag(argv[1])){ run_default(argv[0], argv[1]); return 0; }
@@ -56,17 +61,17 @@ int main(int argc, char** old_argv){
         }
         else if(ARG("-rs", 0)){ CALL(remove_save_file(argv, argc, &i)) }
         else if(ARG("-af", 1)){ CALL(add_file(argv, argc, &i)) }
-        else if(ARG("-aff", 1)){ add_flag(argv, argc, &i); }
         else if(ARG("-pf", 0)){ print_files(); }
         else if(ARG("-pff", 0)){ print_flags(); }
         else if(ARG("-de", 0)){builder->del = 1; }
         else if(ARG("-f", 2)){ CALL(add_files(argv, argc, &i)) }
-        else if(ARG("-ff", 1)){ add_flags(argv, argc, &i); }
+        else if(ARG("-ff", 1)){ CALL(add_flags(argv, argc, &i)) }
         else if(ARG("-rf", 1)){ remove_file(argv, argc, &i); }
         else if(ARG("-rff", 1)){ remove_flag(argv, argc, &i); }
-        else if(ARG("-arff", 1)){ add_run_flag(argv, argc, &i); }
+        else if(ARG("-arff", 1)){ CALL(add_run_flag(argv, argc, &i)) }
+        else if(ARG("-scmd", 0)){ builder->show_cmd = 1;}
         else if(ARG("-ln", 3)){ CALL(ln(argv, argc, &i)) }
-        else if(ARG("-cp", 3)){ CALL(ln(argv, argc, &i)) }
+        else if(ARG("-cp", 3)){ CALL(copy(argv, argc, &i)) }
         else if(ARG("-git", 2)){ CALL(git_init(argv, argc, &i)) }
         else if(ARG("-push", 1)){ CALL(git_push(argv, argc, &i)) }
         else if(ARG("-pull", 0)){ CALL(git_pull(argv, argc, &i)) }
@@ -89,10 +94,11 @@ int main(int argc, char** old_argv){
     if(builder->run && result){ result = run(); }
     long time_end_run = get_time();
     // save
-    if(builder->save && result){ save(); }
+    if(builder->save){ save(); }
     if(result){
         if(builder->time_build){ printf("%sBuild time:%s %s\n",YELLOW,WHITE,time_to_string(time_end_build - time_start_build)); }
         if(builder->run && builder->time_run){ printf("%sRun time:%s %s\n",YELLOW,WHITE,time_to_string(time_end_run - time_start_run)); }
     }
+    return 0;
 }
 
