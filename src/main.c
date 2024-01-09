@@ -8,7 +8,7 @@ int main(int argc, char** old_argv){
     for(int i = 0; i < argc; i++){ argv[i] = old_argv[i];}
     // init builder
     builder = malloc(sizeof(Builder));
-    builder->compiler =       COMPILER;
+    builder->compiler =       NULL;
     builder->output =         "a.out";
     builder->dd =             get_current_dir();
     builder->cmd =            malloc(sizeof(char));
@@ -83,9 +83,8 @@ int main(int argc, char** old_argv){
         end_error:
             i++; error = 1;
     }
-    int result = !error;
+    int result = !error && builder->files_size > 0;
     // build
-    if(builder->files_size == 0){ printf("%sERROR: %sNo files to build%s\n",RED,WHITE,RESET); result = 0; }
     long time_start_build = get_time();
     if(builder->files_size > 0 && result){ result = build(); }
     long time_end_build = get_time();

@@ -36,16 +36,6 @@
 
 
 
-#ifdef __clang__
-    #define COMPILER "clang"
-#elif __GNUC__
-    #define COMPILER "gcc"
-#elif _MSC_VER
-    #define COMPILER "msvc"
-#else
-    #define COMPILER NULL
-#endif
-
 #ifdef __windows__
     #define OS "windows"
 #elif __linux__
