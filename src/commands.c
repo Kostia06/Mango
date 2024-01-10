@@ -1,5 +1,87 @@
 #include "include.h"
 
+// all of the flags
+Variable* get_var(char* name){
+    for(size_t i = 0; i < builder->vars_size; i++){
+        if(!strcmp(builder->vars[i]->name, name)){ return builder->vars[i]; }
+    }
+    return NULL;
+}
+// create new variable
+Variable* new_var(char* name){
+    Variable* var = malloc(sizeof(Variable));
+    var->name = name;
+    var->value = malloc(sizeof(char));
+    builder->vars = realloc(builder->vars, sizeof(Variable*) * (builder->vars_size + 1));
+    builder->vars[builder->vars_size++] = var;
+    return var;
+}
+// import all of the flags from var
+static char** import_flags(Variable* var, char** argv, int* argc, size_t* i){
+    char** args = malloc(sizeof(char*));
+    size_t args_size = 0;
+    size_t size = strlen(var->value);
+    size_t j = 0;
+    while(j < size){
+        char* word = malloc(sizeof(char));
+        size_t word_size = 0;
+        if(var->value[j] == ' '){ j++; continue; }
+        else if(var->value[j] == '\"'){
+            j++;
+            while(j < size && var->value[j] != '\"'){
+                word = realloc(word, sizeof(char) * (word_size + 2));
+                word[word_size++] = var->value[j++];
+            }
+            j++;
+        }
+        else{
+            while(j < size && var->value[j] != ' ' && var->value[j] != '\"'){
+                word = realloc(word, sizeof(char) * (word_size + 2));
+                word[word_size++] = var->value[j++];
+                if(j+1 < size && var->value[j] == '\\' && var->value[j+1] == '\"'){
+                    word = realloc(word, sizeof(char) * (word_size + 2));
+                    word[word_size++] = var->value[j++];
+                }
+            } 
+        }
+        word[word_size] = '\0';
+        args = realloc(args, sizeof(char*) * (args_size + 1));
+        args[args_size++] = word;
+    }
+    // from point i move the args_size amount of item to the right in argv
+    argv = realloc(argv, sizeof(char*) * (*argc + args_size - 1));
+    for(size_t j = *argc; j > *i; j--){
+        argv[j + args_size - 1] = argv[j];
+    }
+    for(size_t j = 0; j < args_size; j++){
+        argv[*i + j] = args[j];
+    }
+    *argc += args_size - 1;
+    return argv;
+}
+// handle if there is a unknown flag
+char** handle_var(char** argv, int* argc, size_t* i){
+    Variable* var = get_var(argv[*i]); 
+    if(!var){
+        var = new_var(argv[*i]);
+        int found = 0;
+        while(*i < *argc){ 
+            if(!strcmp(argv[*i], "@end")){ found = 1; break; }
+            var->value = realloc(var->value, sizeof(char) * (strlen(var->value) + strlen(argv[*i]) + 2));
+            strcat(var->value, argv[*i]);
+            strcat(var->value, " ");
+            (*i)++;
+            SAVE(argv[*i]);
+        }
+        if(!found){
+            printf("%sERROR:%s Expected \"@end\" in \"%s\"%s\n",RED,WHITE,var->name,RESET);
+            return NULL;
+        }
+        (*i)--;
+    }
+    else{ return import_flags(var, argv, argc, i);}
+    return NULL;
+}
 // print all of the flags and how to use them
 void help(char* file){
     printf("%sMango Help\n", WHITE);
@@ -32,8 +114,7 @@ int change_default_dir(char** argv, int argc, size_t* i){
         return 0;
     }
     builder->dd = get_direct_dir(dir);
-    builder->output = combine_dir(builder->dd, builder->output);
-    CMD_ARG(dir);
+    SAVE(dir);
     return 1;
 }
 // time everything
@@ -62,28 +143,12 @@ int add_file(char** argv, int argc, size_t* i){
             printf("%sERROR:%s \"%s\" is not a file%s\n",RED,WHITE, files[j], RESET);
             result = 0;
         }
-        else{ 
-            files[j] = get_direct_dir(files[j]);
-            builder->files = realloc(builder->files, sizeof(char*) * (builder->files_size + 1));
-            builder->files[builder->files_size++] = files[j];
-            CMD_ARG(files[j]);
+        else{
+            SAVE(get_direct_dir(files[j]));
+            CMD(get_direct_dir(files[j])); 
         }
     }
     return result;
-}
-// print all of the files
-void print_files(){
-    printf("%sINFO: %sFiles:%s\n", YELLOW, WHITE, RESET);
-    for(size_t i = 0; i < builder->files_size; i++){
-        printf("\t%s%s%s\n", WHITE, builder->files[i], RESET);
-    }
-}
-// print all of the flags
-void print_flags(){
-    printf("%sINFO: %sFlags:%s\n", YELLOW, WHITE,RESET);
-    for(size_t i = 0; i < builder->flags_size; i++){
-        printf("\t%s%s%s\n", WHITE, builder->flags[i], RESET);
-    }
 }
 // add all files based of extension
 int add_files(char** argv, int argc, size_t* i){
@@ -99,69 +164,11 @@ int add_files(char** argv, int argc, size_t* i){
     char** files = get_files_exts(dir, extensions, ext_size);
     for(size_t j = 0; files[j] != NULL; j++){ 
         char* file = files[j];
-        if(check_in(file, builder->files, builder->files_size) != -1){ continue; }
-        builder->files = realloc(builder->files, sizeof(char*) * (builder->files_size + 1));
-        builder->files[builder->files_size++] = file;
+        CMD(file);
     }
-    CMD_ARG(get_direct_dir(dir1));
-    for(size_t j = 0; j < ext_size; j++){ CMD_ARG(extensions[j]); }
+    SAVE(get_direct_dir(dir1));
+    for(size_t j = 0; j < ext_size; j++){ SAVE(extensions[j]); }
     return 1;
-}
-// add all flags
-int add_flags(char** argv, int argc, size_t* i){
-    (*i)++;
-    char** flags = malloc(sizeof(char*));
-    size_t flags_size = 0;
-    while(strcmp(argv[*i], "-ffe") && *i < argc){
-        flags = realloc(flags, sizeof(char*) * (flags_size + 1));
-        flags[flags_size++] = argv[(*i)++];
-        CMD_ARG(flags[flags_size - 1]);
-    }
-    if(strcmp(argv[*i], "-ffe")){
-        printf("%sERROR:%s Expected \"-ffe\"%s\n",RED,WHITE,RESET);
-        return 0;
-    }
-    CMD_ARG("-ffe");
-    for(size_t j = 0; j < flags_size; j++){ 
-        char* flag = flags[j];
-        if(check_in(flag, builder->flags, builder->flags_size) != -1){ continue; }
-        builder->flags = realloc(builder->flags, sizeof(char*) * (builder->flags_size + 1));
-        builder->flags[builder->flags_size++] = flag;
-    }
-    return 1;
-}
-// remove file(s)
-void remove_file(char** argv, int argc, size_t* i){
-    size_t size = 0;
-    (*i)++;
-    char** files = get_args(argv, argc, i, &size);
-    for(size_t j = 0; j < size; j++){
-        char* file = get_file(files[j]);
-        int index = check_in(file, builder->files, builder->files_size);
-        if(index == -1){
-            printf("%sWARNING:%s \"%s\" is not a file%s\n",PINK,WHITE, file, RESET);
-            continue;
-        }
-        printf("%sRemoving:%s %s%s\n",YELLOW,WHITE,file,RESET);
-        remove_item(builder->files, &builder->files_size, index);
-        CMD_ARG(get_direct_dir(file));
-    }
-}
-// remove flag(s)
-void remove_flag(char** argv, int argc, size_t* i){
-    size_t size = 0;
-    (*i)++;
-    char** flags = get_args(argv, argc, i, &size);
-    for(size_t j = 0; j < size; j++){
-        char* flag = get_dir(flags[j]);
-        int index = check_in(flag, builder->files, builder->files_size);
-        if(index == -1){
-            printf("%sWARNING:%s \"%s\" is not a flag%s\n",PINK,WHITE, flag, RESET);
-            continue;
-        }
-        remove_item(builder->flags, &builder->files_size, index);
-        CMD_ARG(flag);
-    }
 }
 // add flags to the executable on run
 int add_run_flag(char** argv, int argc, size_t* i){
@@ -169,22 +176,30 @@ int add_run_flag(char** argv, int argc, size_t* i){
         printf("%sWARNING:%s Autorun is not enabled, meaning the run flags won't be added%s\n",PINK,WHITE,RESET);
     }
     (*i)++;
+    Variable* var = get_var("@ff");
+    if(!var){ var = new_var("@ff"); }
     char** flags = malloc(sizeof(char*));
-    size_t flags_size = 0;
-    while(strcmp(argv[*i], "-arffe") && *i < argc){
+    size_t flags_size = 0, found = 0;
+    while(*i < argc){
+        char* flag = malloc(sizeof(char) * (strlen(argv[*i]) + 1));
+        strcpy(flag, argv[(*i)++]);
+        if(!strcmp(flag, "@end")){ found = 1;break; }
         flags = realloc(flags, sizeof(char*) * (flags_size + 1));
-        flags[flags_size++] = argv[(*i)++];
-        CMD_ARG(flags[flags_size - 1]);
+        flags[flags_size] = flag;
+        SAVE(flags[flags_size]);
+        flags_size++;
     }
-    if(strcmp(argv[*i], "-arffe")){
-        printf("%sERROR:%s Expected \"-arffe\"%s\n",RED,WHITE,RESET);
+    if(!found){
+        printf("%sERROR:%s Expected \"@end\" in \"@ff\"%s\n",RED,WHITE,RESET);
         return 0;
     }
-    CMD_ARG("-arffe");
-    for(size_t j = 0; j < flags_size; j++){      
-        builder->run_flags = realloc(builder->run_flags, sizeof(char*) * (builder->run_flags_size + 1));
-        builder->run_flags[builder->run_flags_size++] = flags[j];
+    SAVE("@end");
+    for(size_t j = 0; j < flags_size; j++){    
+        var->value = realloc(var->value, sizeof(char) * (strlen(var->value) + strlen(flags[j]) + 2));
+        strcat(var->value, flags[j]);
+        strcat(var->value, " ");
     }
+    *i -= 1;
     return 1;
 }
 // link folder to the default directory
@@ -204,9 +219,9 @@ int ln(char** argv, int argc, size_t* i){
     if(!result){ return 0; }
     to = combine_dir(to, name);
     symlink(from, to);
-    CMD_ARG(from);
-    CMD_ARG(to);
-    CMD_ARG(name);
+    SAVE(from);
+    SAVE(to);
+    SAVE(name);
     printf("%sLinked:%s %s%s\n",YELLOW,WHITE,from,RESET);
     return 1;
 }
@@ -234,9 +249,9 @@ int copy(char** argv, int argc, size_t* i){
     if(from_dir){ sprintf(command, "cp -r %s %s", from, to); }
     else{ sprintf(command, "cp %s %s", from, to); }
     system(command);
-    CMD_ARG(from);
-    CMD_ARG(to);
-    CMD_ARG(name);
+    SAVE(from);
+    SAVE(to);
+    SAVE(name);
     printf("%sINFO: %sCopied from %s to %s%s\n",YELLOW,WHITE,from, to,RESET);
     return 1;
 }
@@ -276,8 +291,8 @@ int git_init(char** argv, int argc, size_t* i){
         result = system(command);
         if(result != -1 && result == 0){ printf("%s.gitignore added%s\n",GREEN,RESET); }
         else{ printf("%sFailed to add .gitignore%s\n",RED,RESET); return 0; }
-        CMD_ARG(dir);
-        CMD_ARG(link);
+        SAVE(dir);
+        SAVE(link);
     }
     return 1;
 }
@@ -288,7 +303,7 @@ int git_push(char** argv, int argc, size_t* i){
     int result = system(command);
     if(result != -1 && result == 0){ printf("%sPushed to git repository%s\n",GREEN,RESET); }
     else{ printf("%sFailed to push to git repository%s\n",RED,RESET); return 0; }
-    CMD_ARG(commit);
+    SAVE(commit);
     return 1;
 }
 

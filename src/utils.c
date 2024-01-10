@@ -35,7 +35,15 @@ int is_path(char* path){ return is_file(path) || is_dir(path); }
 char** get_args(char** argv, int argc, size_t* i, size_t* new_args_size){
     char** args = malloc(sizeof(char*));
     size_t args_size = 0;
-    while(*i < argc && !check_flag(argv[*i])){
+    while(
+        *i < argc && 
+        argv[*i][0] != '-' && 
+        (
+            (strlen(argv[*i]) >= 2 && argv[*i][0] != '@' && argv[*i][1] != '@') ||
+            argv[*i][0] != '@'
+            
+        )
+    ){
         args = realloc(args, sizeof(char*) * (args_size + 1));
         args[args_size++] = argv[(*i)++];
     }

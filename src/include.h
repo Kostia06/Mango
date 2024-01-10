@@ -20,19 +20,32 @@
 #define     CYAN    "\033[1m\033[36m"
 
 #define ARG(arg, n) check_arg(exe, arg, argv[i], argc, i, n)
-#define CALL(func) if(!func){ goto end_error; }
-#define CMD_FLAG(arg) \
-        if((check_flag(arg) || !strcmp(arg,"\n")) && !(!strcmp(arg, "-sr")) && !(!strcmp(arg, "-s"))){ \
-            builder->cmd = realloc(builder->cmd, sizeof(char) * (strlen(builder->cmd) + strlen(arg) + 2)); \
-            strcat(builder->cmd, arg); \
-            strcat(builder->cmd, " "); \
-        }
 
-#define CMD_ARG(arg) \
+#define CALL(func) if(!func){ goto end_error; }
+
+
+#define CMD(arg) \
         builder->cmd = realloc(builder->cmd, sizeof(char) * (strlen(builder->cmd) + strlen(arg) + 3)); \
-        strcat(builder->cmd, "\""); \
-        strcat(builder->cmd, arg); \
-        strcat(builder->cmd, "\" "); \
+        if(!strchr(arg, ' ')) \
+            strcat(builder->cmd, arg); \
+        else{ \
+            strcat(builder->cmd, "\""); \
+            strcat(builder->cmd, arg); \
+            strcat(builder->cmd, "\""); \
+        } \
+        strcat(builder->cmd, " "); \
+
+#define SAVE(arg) \
+        builder->cmd_save = realloc(builder->cmd_save, sizeof(char) * (strlen(builder->cmd_save) + strlen(arg) + 3)); \
+        if(!strcmp(arg, "@s") || !strcmp(arg, "@sr")){} \
+        else if(!strchr(arg, ' ')) \
+            strcat(builder->cmd_save, arg); \
+        else{ \
+            strcat(builder->cmd_save, "\""); \
+            strcat(builder->cmd_save, arg); \
+            strcat(builder->cmd_save, "\""); \
+        } \
+        strcat(builder->cmd_save, " "); \
 
 
 
@@ -54,46 +67,45 @@ typedef struct{
 } Flag;
 
 typedef struct{
-    char* compiler, *output;
-    char* dd, *cmd;
-    char** files, **actual_files, **flags, **run_flags;
-    size_t files_size, flags_size, run_flags_size;
-    int run, save, time_build, time_run, del, show_cmd;
+    char* name;
+    char* value;
+} Variable;
+
+typedef struct{
+    Variable** vars;
+    size_t vars_size;
+    char* dd, *cmd,*cmd_save, *compiler, *run_flags, *run;
+    int  build, save, time_build, time_run, show_cmd, del;
 } Builder;
 
 Builder* builder;
 static int error = 0;
 
 static Flag flags[30] = { 
-    {"-h",    "",                                                 "help"},
-    {"-v",    "",                                                 "version"},
-    {"-o",    "<name>",                                           "output file name"},
-    {"-c",    "<name>",                                           "change compiler"},
-    {"-d",    "<dir>",                                            "change the default directory"},
-    {"-s",    "",                                                 "save all commands to a .mango file"},
-    {"-sr",   "<dir>",                                            "adds all of the flags to the builder from .mango"},
-    {"-rs",   "",                                                 "remove save file"},
-    {"-t",    "",                                                 "time the build and autorun"},
-    {"-tr",  "",                                                  "time the run of the executable"},
-    {"-tb",   "",                                                 "time the build"},
-    {"-r",   "",                                                  "will run the executable after building it"},
-    {"-af",   "<file1> <file2> ...",                              "add a file(s)"},
-    {"-pf",   "",                                                 "print all of the files"},
-    {"-pff",  "",                                                 "print all of the flags"},
-    {"-de",   "" ,                                                "delete executable after autorun"},
-    {"-f",    "<dir> <file extention 1> <file extention 2> ...",  "add files(s)"},
-    {"-ff",   "<flag1> <flag2> ...",                              "add flag(s)"},
-    {"-ffe", "",                                                  "end of add flag(s)"},
-    {"-rf",   "<file1> <file2> ...",                              "remove file(s)"},
-    {"-rff",  "<flag1> <flag2> ...",                              "remove flag(s)"},
-    {"-arff", "<flag1> <flag2> ...",                              "add flag(s) to the autorun"},
-    {"-arffe","",                                                 "end of the flags"},
-    {"-scmd", "",                                                 "show the command"},
-    {"-ln",   "<from dir> <to dir> <name>",                       "link a folder to a directory"},
-    {"-cp",   "<from dir> <to dir> <name>",                       "copy a folder to a directory"},
-    {"-git",  "<dir> <SSH Git Link>",                             "set up git in the current directory"},
-    {"-push", "<commit name>",                                    "push to git"},
-    {"-pull", "",                                                 "pull from git"},
+    {"@h",    "",                                                 "help"},
+    {"@v",    "",                                                 "version"},
+    {"@o",    "<name>",                                           "output file name"},
+    {"@c",    "<name>",                                           "change compiler"},
+    {"@dd",    "<dir>",                                            "change the default directory"},
+    {"@s",    "",                                                 "save all commands to a .mango file"},
+    {"@d",    "",                                                 "delete executable after running it"},
+    {"@sr",   "<dir>",                                            "adds all of the flags to the builder from .mango"},
+    {"@rs",   "",                                                 "remove save file"},
+    {"@t",    "",                                                 "time the build and autorun"},
+    {"@tr",  "",                                                  "time the run of the executable"},
+    {"@tb",   "",                                                 "time the build"},
+    {"@r",    "<dir>",                                            "will run the executable after building it"},
+    {"@b",    "",                                                 "builds"},
+    {"@af",   "<file1> <file2> ...",                              "add a file(s)"},
+    {"@f",    "<dir> <file extention 1> <file extention 2> ...",  "add files(s)"},
+    {"@ff",   "<flag1> <flag2> ...",                              "add flag(s) to the autorun"},
+    {"@scmd", "",                                                 "show the command"},
+    {"@ln",   "<from dir> <to dir> <name>",                       "link a folder to a directory"},
+    {"@cp",   "<from dir> <to dir> <name>",                       "copy a folder to a directory"},
+    {"@git",  "<dir> <SSH Git Link>",                             "set up git in the current directory"},
+    {"@push", "<commit name>",                                    "push to git"},
+    {"@pull", "",                                                 "pull from git"},
+    {"@end","",                                                   "end"},
     {NULL,    NULL,                                               NULL}
 };
 
@@ -103,17 +115,15 @@ int run();
 void save();
 int run_default(char* builder_path, char* path);
 // commands
+Variable* get_var(char* name);
+Variable* new_var(char* name);
+char** handle_var(char** argv, int* argc, size_t* i);
 void help(char* file);
 int change_default_dir(char** argv, int argc, size_t* i);
 void time_everything();
 void time_run();
 int add_file(char** argv, int argc, size_t* i);
-void print_files();
-void print_flags();
 int add_files(char** argv, int argc, size_t* i);
-int add_flags(char** argv, int argc, size_t* i);
-void remove_file(char** argv, int argc, size_t* i);
-void remove_flag(char** argv, int argc, size_t* i);
 int add_run_flag(char** argv, int argc, size_t* i);
 int ln(char** argv, int argc, size_t* i);
 int copy(char** argv, int argc, size_t* i);

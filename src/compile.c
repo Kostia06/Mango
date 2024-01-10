@@ -5,55 +5,46 @@ int build(){
         printf("%sERROR:%s No compiler set\n%s",RED,WHITE,RESET); 
         return 0; 
     }
-    char* files = into_string(builder->files, builder->files_size);
-    char* flags = into_string(builder->flags, builder->flags_size);
-    char* command = malloc(
-        sizeof(char) * 
-        (
-            strlen(builder->compiler) + 
-            strlen(files) + 
-            strlen(flags) + 
-            strlen(builder->output) + 
-            10
-        )
-    );
-    sprintf(command, "%s %s %s -o %s", builder->compiler,files, flags, builder->output);
-    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, command, RESET); }
+    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, builder->cmd, RESET); }
+    char* command = malloc(sizeof(char) * (strlen(builder->dd) + strlen(builder->cmd) + 10));
+    sprintf(command, "cd %s && %s", builder->dd, builder->cmd);
     int result = system(command);
-    if(result != -1 && result == 0){ printf("%sCompiled successfully into \"%s\"%s\n",GREEN, builder->output, RESET); }
+    if(result != -1 && result == 0){ printf("%sCompiled successfully%s\n",GREEN, RESET); }
     else{ printf("%sFailed to compile%s\n",RED,RESET); return 0; }
     return 1;
 }
 
 int run(){
-    char* run_flags = into_string(builder->run_flags, builder->run_flags_size);
-    char* command = malloc(sizeof(char) * (strlen(builder->output) + strlen(run_flags) + 25));
+    if(!builder->run || !is_file(combine_dir(builder->dd,builder->run))){ 
+        printf("%sERROR:%s No executable to execute is set\n%s",RED,WHITE,RESET); 
+        return 0; 
+    }
+    builder->run = get_direct_dir(combine_dir(builder->dd,builder->run));
+    Variable* var = get_var("@ff");
+    char* run_flags = "";
+    if(var){ run_flags = var->value; }
+    char* command = malloc(sizeof(char) * (strlen(builder->run) + strlen(run_flags) + 2));
     // create the command
     #ifdef _WIN32
-        sprintf(command, "%s %s", builder->output, run_flags);
+        sprintf(command, "%s %s", builder->run, run_flags);
     #else
-        if(builder->output[0] == '/') sprintf(command, "%s %s", builder->output, run_flags);
-        else{sprintf(command, "./%s %s", builder->output, run_flags);}
+        if(builder->run[0] == '/'){sprintf(command, "%s %s", builder->run, run_flags);}
+        else{sprintf(command, "./%s %s", builder->run, run_flags);}
     #endif
-    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, command, RESET); }
+    if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, command, RESET); } 
     // run the command
     int result = system(command);
     if(result != -1 && result == 0){ printf("%sRan successfully%s\n",GREEN,RESET); }
     else{ printf("%sFailed to run%s\n",RED,RESET); return 0; }
-    if(builder->del){
-        char* command = malloc(sizeof(char) * strlen(builder->output) + 10);
-        sprintf(command, "rm %s", builder->output);
-        int result = system(command);
-        if(result != -1 && result == 0){ printf("%sDeleted executable \"%s\"%s\n",GREEN,builder->output,RESET); }
-        else{ printf("%sFailed to delete executable%s\n", RED,RESET); return 0; }
-    } 
+    if(builder->del){ remove(builder->run); }
+    if(builder->del && builder->show_cmd){ printf("%sINFO: %sDeleted \"%s\"%s\n",YELLOW,WHITE, builder->run, RESET); }
     return 1;
 }
 
 void save(){
     char* builder_path = combine_dir(builder->dd, BUILDER_NAME);
     FILE* f = fopen(builder_path, "w");
-    fprintf(f, "%s", builder->cmd);
+    fprintf(f, "%s", builder->cmd_save);
     fclose(f);
     printf("%sINFO: %sSaved build command to \"%s\"%s\n",YELLOW,WHITE, builder_path, RESET);
 }
