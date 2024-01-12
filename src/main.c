@@ -8,11 +8,10 @@ int main(int argc, char** old_argv){
     for(int i = 0; i < argc; i++){ argv[i] = old_argv[i];}
     // init builder
     builder = malloc(sizeof(Builder));
-    builder->compiler =       NULL;
     builder->run =            NULL;
     builder->dd =             get_current_dir();
-    builder->cmd =            malloc(sizeof(char));
     builder->cmd_save =       malloc(sizeof(char));
+    builder->cmd =            malloc(sizeof(char));
     builder->vars=            malloc(sizeof(Variable*));
     builder->vars_size =      0;
     builder->save =           0;
@@ -30,22 +29,10 @@ int main(int argc, char** old_argv){
     size_t i = 1;
     SAVE("\n");
     while(i < argc){
-        if(!(strlen(argv[i]) < 2 && argv[i][0] == '@' && argv[i][1] == '@')){
-            argv = check_valid_flag(argv[i], argv, &argc, i);
-        }
         SAVE(argv[i]);
         // check flags 
         if(ARG("@h", 0)){ help(exe); }
         else if(ARG("@v", 0)){ printf("%sVERSION:%s %s%s\n",YELLOW,WHITE,VERSION,RESET); }
-        else if(ARG("@c", 1)){ 
-            builder->compiler = argv[++i]; 
-            char* cmd = malloc(sizeof(char) * (strlen(builder->compiler) + strlen(builder->cmd) +2));
-            strcpy(cmd, builder->compiler);
-            strcat(cmd, " ");
-            strcat(cmd, builder->cmd);
-            builder->cmd = cmd;
-            SAVE(argv[i]);
-        }
         else if(ARG("@d", 1)){ CALL(change_default_dir(argv, argc, &i)) } 
         else if(ARG("@s", 0)){ builder->save = 1; }
         else if(ARG("@t", 0)){ time_everything(); }
@@ -57,7 +44,7 @@ int main(int argc, char** old_argv){
             SAVE(get_direct_dir(argv[i])); 
         }
         else if(ARG("@b", 0)){ builder->build = 1;}
-        else if(ARG("@sr",1)){ 
+        else if(ARG("@sr",0)){ 
             char** new_argv = add_save(argv, &argc, &i);
             if(!new_argv){ goto end_error; }
             argv = new_argv;
@@ -74,12 +61,17 @@ int main(int argc, char** old_argv){
         else if(ARG("@push", 1)){ CALL(git_push(argv, argc, &i)) }
         else if(ARG("@pull", 0)){ CALL(git_pull(argv, argc, &i)) }
         else if(argv[i][0] == '@'){ 
-            char** new_argv = handle_var(argv,&argc, &i); 
-            if(!new_argv){ goto end_error; }
-            argv = new_argv;
-            i--;
+            int result = 1;
+            char** new_argv = handle_var(argv,&argc, &i, &result); 
+            if(!result){ goto end_error; }
+            if(new_argv){
+                argv = new_argv;
+                i--;
+            }
         }
-        else{ CMD(argv[i]); }
+        else{
+            CMD(argv[i]); 
+        }
         SAVE("\n");
         i++; continue;
         end_error:

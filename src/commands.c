@@ -44,6 +44,7 @@ static char** import_flags(Variable* var, char** argv, int* argc, size_t* i){
                 }
             } 
         }
+        word = realloc(word, sizeof(char) * (word_size + 2));
         word[word_size] = '\0';
         args = realloc(args, sizeof(char*) * (args_size + 1));
         args[args_size++] = word;
@@ -57,27 +58,34 @@ static char** import_flags(Variable* var, char** argv, int* argc, size_t* i){
         argv[*i + j] = args[j];
     }
     *argc += args_size - 1;
+    *i += 1;
     return argv;
 }
+// create a new variable
+Variable* create_new_variabe(char** argv, int* argc, size_t* i){
+    Variable* var = new_var(argv[*i]);
+    int found = 0;
+    while(*i < *argc){
+        var->value = realloc(var->value, sizeof(char) * (strlen(var->value) + strlen(argv[*i]) + 2));
+        strcat(var->value, argv[*i]);
+        strcat(var->value, " ");
+        SAVE(argv[*i]);
+        if(!strcmp(argv[*i], "@end")){ found = 1; break; }
+        (*i)++;
+    }
+    if(!found){
+        printf("%sERROR:%s Expected \"@end\" in \"%s\"%s\n",RED,WHITE,var->name,RESET);
+        return NULL;
+    }
+    return var;
+}
 // handle if there is a unknown flag
-char** handle_var(char** argv, int* argc, size_t* i){
-    Variable* var = get_var(argv[*i]); 
-    if(!var){
-        var = new_var(argv[*i]);
-        int found = 0;
-        while(*i < *argc){ 
-            if(!strcmp(argv[*i], "@end")){ found = 1; break; }
-            var->value = realloc(var->value, sizeof(char) * (strlen(var->value) + strlen(argv[*i]) + 2));
-            strcat(var->value, argv[*i]);
-            strcat(var->value, " ");
-            (*i)++;
-            SAVE(argv[*i]);
-        }
-        if(!found){
-            printf("%sERROR:%s Expected \"@end\" in \"%s\"%s\n",RED,WHITE,var->name,RESET);
-            return NULL;
-        }
-        (*i)--;
+char** handle_var(char** argv, int* argc, size_t* i, int* result){
+    Variable* var = get_var(argv[++(*i)]); 
+    if(!var){ 
+        var = create_new_variabe(argv, argc, i); 
+        *result = var ? 1 : 0;
+        if(!var){ return NULL; }
     }
     else{ return import_flags(var, argv, argc, i);}
     return NULL;
@@ -317,13 +325,12 @@ int git_pull(char** argv, int argc, size_t* i){
 }
 // add commands from save file
 char** add_save(char** argv, int* argc, size_t* i){
-    char* dir1 = argv[++(*i)]; 
-    char* dir = get_dir(dir1);
-    if(!is_file(dir)){
-        printf("%sERROR:%s \"%s/%s\" is not a file%s\n",RED,WHITE, dir1,BUILDER_NAME, RESET);
+    char* dir = combine_dir(builder->dd, BUILDER_NAME);
+    FILE* f = fopen(dir, "r");
+    if(!f){
+        printf("%sERROR:%s \"%s/%s\" is not a file%s\n",RED,WHITE, dir,BUILDER_NAME, RESET);
         return NULL;
     }
-    FILE* f = fopen(combine_dir(dir,BUILDER_NAME), "r");
     char* line = malloc(sizeof(char));
     char c;
     size_t line_size = 0;

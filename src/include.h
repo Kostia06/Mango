@@ -25,7 +25,7 @@
 
 
 #define CMD(arg) \
-        builder->cmd = realloc(builder->cmd, sizeof(char) * (strlen(builder->cmd) + strlen(arg) + 3)); \
+        builder->cmd = realloc(builder->cmd, sizeof(char) * (strlen(builder->cmd) + strlen(arg) + 4)); \
         if(!strchr(arg, ' ')) \
             strcat(builder->cmd, arg); \
         else{ \
@@ -36,7 +36,7 @@
         strcat(builder->cmd, " "); \
 
 #define SAVE(arg) \
-        builder->cmd_save = realloc(builder->cmd_save, sizeof(char) * (strlen(builder->cmd_save) + strlen(arg) + 3)); \
+        builder->cmd_save = realloc(builder->cmd_save, sizeof(char) * (strlen(builder->cmd_save) + strlen(arg) + 4)); \
         if(!strcmp(arg, "@s") || !strcmp(arg, "@sr")){} \
         else if(!strchr(arg, ' ')) \
             strcat(builder->cmd_save, arg); \
@@ -46,6 +46,7 @@
             strcat(builder->cmd_save, "\""); \
         } \
         strcat(builder->cmd_save, " "); \
+
 
 
 
@@ -74,7 +75,7 @@ typedef struct{
 typedef struct{
     Variable** vars;
     size_t vars_size;
-    char* dd, *cmd,*cmd_save, *compiler, *run_flags, *run;
+    char* dd, *cmd,*cmd_save, *run_flags, *run;
     int  build, save, time_build, time_run, show_cmd, del;
 } Builder;
 
@@ -85,11 +86,10 @@ static Flag flags[30] = {
     {"@h",    "",                                                 "help"},
     {"@v",    "",                                                 "version"},
     {"@o",    "<name>",                                           "output file name"},
-    {"@c",    "<name>",                                           "change compiler"},
     {"@dd",    "<dir>",                                            "change the default directory"},
     {"@s",    "",                                                 "save all commands to a .mango file"},
     {"@d",    "",                                                 "delete executable after running it"},
-    {"@sr",   "<dir>",                                            "adds all of the flags to the builder from .mango"},
+    {"@sr",   "",                                                 "adds all of the flags to the builder from .mango"},
     {"@rs",   "",                                                 "remove save file"},
     {"@t",    "",                                                 "time the build and autorun"},
     {"@tr",  "",                                                  "time the run of the executable"},
@@ -117,7 +117,7 @@ int run_default(char* builder_path, char* path);
 // commands
 Variable* get_var(char* name);
 Variable* new_var(char* name);
-char** handle_var(char** argv, int* argc, size_t* i);
+char** handle_var(char** argv, int* argc, size_t* i, int* result);
 void help(char* file);
 int change_default_dir(char** argv, int argc, size_t* i);
 void time_everything();

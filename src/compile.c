@@ -1,10 +1,6 @@
 #include "include.h"
 
 int build(){
-    if(builder->compiler == NULL){ 
-        printf("%sERROR:%s No compiler set\n%s",RED,WHITE,RESET); 
-        return 0; 
-    }
     if(builder->show_cmd){ printf("%sINFO: %sRunning \"%s\"%s\n",YELLOW,WHITE, builder->cmd, RESET); }
     char* command = malloc(sizeof(char) * (strlen(builder->dd) + strlen(builder->cmd) + 10));
     sprintf(command, "cd %s && %s", builder->dd, builder->cmd);
