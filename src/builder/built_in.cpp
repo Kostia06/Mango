@@ -68,18 +68,19 @@ void Builder::help(){
     std::cout << "\t@h @help                      Prints all of the flags" << std::endl;
     std::cout << "\t@v @version                   Prints the version of the build" << std::endl;
     std::cout << "\t@f @files [directory] [ext]   Gets all of the files in the directory with the extention" << std::endl;
-    std::cout << "\t@r @run                      Runs the code" << std::endl;
-    std::cout << "\t@t @time                     Prints the time it took to run the code" << std::endl;
-    std::cout << "\t@s @save [file]              Saves the flags into a file" << std::endl;
-    std::cout << "\t@i @info                     Prints info about the code" << std::endl;
-    std::cout << "\t@si @silent                  Silents the output of the code" << std::endl;
-    std::cout << "\t@d @directory [directory]    Changes the directory" << std::endl;
-    std::cout << "\t@l @load [file]              Loads the flags from a file" << std::endl;
-    std::cout << "\t@git                         Initilizes git" << std::endl;
-    std::cout << "\t@push [message]              Pushes the code to github" << std::endl;
-    std::cout << "\t@pull                        Pulls the code from github" << std::endl;
-    std::cout << "\t@cp [folder] [folder]        Copies the folder to the other folder" << std::endl;
-    std::cout << "\t@[name] [@args] [size] @     Creates a new object" << std::endl;
+    std::cout << "\t@r @run                       Runs the code" << std::endl;
+    std::cout << "\t@t @time                      Prints the time it took to run the code" << std::endl;
+    std::cout << "\t@s @save [file]               Saves the flags into a file" << std::endl;
+    std::cout << "\t@i @info                      Prints info about the code" << std::endl;
+    std::cout << "\t@si @silent                   Silents the output of the code" << std::endl;
+    std::cout << "\t@d @directory [directory]     Changes the directory" << std::endl;
+    std::cout << "\t@l @load [file]               Loads the flags from a file" << std::endl;
+    std::cout << "\t@git [URL]                    Initilizes git" << std::endl;
+    std::cout << "\t@push [message]               Pushes the code to github" << std::endl;
+    std::cout << "\t@pull [whete]                 Pulls the code from github" << std::endl;
+    std::cout << "\t@fetch [where]                Fetches the code from github" << std::endl;
+    std::cout << "\t@cp [folder] [folder]         Copies the folder to the other folder" << std::endl;
+    std::cout << "\t@[name] [@args] [size] @      Creates a new object" << std::endl;
 
 
     std::cout << RESET;

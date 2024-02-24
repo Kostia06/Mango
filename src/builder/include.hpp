@@ -9,7 +9,7 @@
 #include <ctype.h>
 
 #define     LOCAL           ".mango"
-#define     VERSION         "1.0.0"
+#define     VERSION         "0.0.2"
 
 #define     RESET   "\033[0m"
 #define     WHITE   "\033[1m\033[37m"
@@ -25,7 +25,9 @@ static std::string default_code =
 "@git @args 1 git init && git checkout -b main && git remote add origin @0 && touch .gitignore @r @ "
 "@push @args 1 git add . && git commit -m @0 && git push -u origin main @r @ "
 "@pull @args 1 git pull  @r @ "
+"@back git reset --hard HEAD@{1} @r git pull @r @ "
 "@cp @args 2 cp @0 @1 @r @ "
+"@fetch @args 1 git fetch @0 @r @ "
 ;
 
 class Command{
