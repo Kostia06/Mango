@@ -27,7 +27,7 @@ static std::string default_code =
 "@pull @args 1 git pull  @r @ "
 "@back git reset --hard HEAD@{1} @r git pull @r @ "
 "@cp @args 2 cp @0 @1 @r @ "
-"@fetch @args 1 git fetch @0 @r @ "
+"@fetch @args 2 git fetch @0 @1 @r @ "
 ;
 
 class Command{
