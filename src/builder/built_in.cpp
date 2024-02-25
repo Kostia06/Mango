@@ -77,7 +77,7 @@ void Builder::help(){
     std::cout << "\t@l @load [file]               Loads the flags from a file" << std::endl;
     std::cout << "\t@git [URL]                    Initilizes git" << std::endl;
     std::cout << "\t@push [message]               Pushes the code to github" << std::endl;
-    std::cout << "\t@pull [whete]                 Pulls the code from github" << std::endl;
+    std::cout << "\t@pull [alias] [branch]        Pulls the code from github" << std::endl;
     std::cout << "\t@fetch [alias] [branch]       Fetches the code from github" << std::endl;
     std::cout << "\t@cp [folder] [folder]         Copies the folder to the other folder" << std::endl;
     std::cout << "\t@[name] [@args] [size] @      Creates a new object" << std::endl;

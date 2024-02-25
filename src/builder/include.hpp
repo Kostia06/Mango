@@ -24,10 +24,10 @@
 static std::string default_code = 
 "@git @args 1 git init && git checkout -b main && git remote add origin @0 && touch .gitignore @r @ "
 "@push @args 1 git add . && git commit -m @0 && git push -u origin main @r @ "
-"@pull @args 1 git pull  @r @ "
+"@pull @args 2 git pull @0 @1 @r @ "
+"@fetch @args 2 git fetch @0 @1 @r @ "
 "@back git reset --hard HEAD@{1} @r git pull @r @ "
 "@cp @args 2 cp @0 @1 @r @ "
-"@fetch @args 2 git fetch @0 @1 @r @ "
 ;
 
 class Command{
