@@ -11,7 +11,4 @@
 1. everything saves in order from left to right
 2. everything that isn't a flag will be saved as it is
 
-
-
-
-    
+./mango -scmd     -ecmd run -run main 
