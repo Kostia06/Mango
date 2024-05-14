@@ -7,7 +7,7 @@
 // gets all of the arguments
 std::vector<std::string> get_arguments(int argc, char** argv){
     std::vector<std::string> arguments;
-    for(int i = 0; i < argc; i++){
+    for(int i = 1; i < argc; i++){
        arguments.push_back((std::string)argv[i]);
     }
     return arguments;

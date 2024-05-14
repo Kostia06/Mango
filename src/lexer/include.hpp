@@ -7,6 +7,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <stdlib.h>
 
 #define RED "\033[1;31m"
 #define WHITE "\033[37m"
@@ -25,11 +26,13 @@ typedef struct {
 
 class Lexer{
     private:
+        std::vector<std::string> save_arguments;
         std::vector<std::string> arguments;
+        
+        std::string cwd = "";
 
-        std::string cwd = ""
-
-        size_t index = 1;
+        size_t index = 0;
+        size_t save_index = 0;
 
         void include_builtin();
         bool overwrite(std::string path);
@@ -42,27 +45,33 @@ class Lexer{
             exit(0);
         }
         // check if the file path exists
-        bool is_file(std::string path){ return is_path(path) && std::filesystem::is_regular_file(path); }
+        bool is_file(std::string path){ return is_path(path) && std::filesystem::is_regular_file(cwd+"/"+path); }
         // check if the directory path exists
-        bool is_directory(std::string path){ return is_path(path) && std::filesystem::is_directory(path); }
+        bool is_directory(std::string path){ return is_path(path) && std::filesystem::is_directory(cwd+"/"+path); }
         // check if the path exists
-        bool is_path(std::string path){ return std::filesystem::exists(path); }
+        bool is_path(std::string path){ return std::filesystem::exists(cwd+"/"+path); }
         // get current working directory
         std::string get_cwd(){ return (std::__fs::filesystem::current_path()).string(); }
-        // print all usefull commands
-        void help(){
-            for(const auto& pair : commands) {
-                std::cout << "\t" << pair.first << " " << pair.second.usage << " -> " << pair.second.description << std::endl;
-            }
-        }
 
-        void save_command();
+        std::string clean_path(std::string& path); 
+
+        void help();
         void get_all_files();
+        void change_cwd();
+        void run_bash();
+        void save();
+        void save_exe();
+        void load();
+        void load(std::string directory);
 
         std::map<std::string, Command> commands{
             {"@help", { 0,  "",                 "Gives a list of all useful commands",    true, [this](){ help(); }}},
-            {"@sm",   { 1,  "<name>",           "Saves the current command as <name>",    true, [this](){ save_command(); }}},
-            {"@f",    { 2, "<dir> <file type>", "Gets all files from <dir>",              true, [this]{}{ get_all_files(); }]}}
+            {"@f",    { 2, "<dir> <file type>", "Gets all files from <dir>",              true, [this](){ get_all_files(); }}},
+            {"@ccwd", { 1, "<dir>",             "Change the current working directory",   true, [this](){ change_cwd();   }}},
+            {"@r",    { 0, "",                  "Runs the given bash code",               true, [this](){ run_bash(); }}},
+            {"@l",    { 1, "<file>",            "Loads the given file",                   true, [this](){ load(); }}},
+            {"@s",    { 1, "<as>",              "Saves the given bash code as a file from a current directory",     true, [this](){ save(); }}},
+            {"@se",   { 1, "<as>",              "Saves the given bash code as a file from a executable directory",  true, [this](){ save_exe(); }}},
         };
 
     public:

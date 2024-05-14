@@ -3,30 +3,14 @@
 // lexer intilizer
 Lexer::Lexer(std::vector<std::string> arguments){
     this->arguments = arguments;
+    for(std::string argument : arguments){ save_arguments.push_back(argument); }
     cwd = get_cwd();
-    if(is_file(BUILTIN)){ include_builtin(); }
-}
-
-// include the builtin functions
-void Lexer::include_builtin(){
-    std::string content = read_content(BUILTIN);
-    std::string argument = "";
-    int i = 0;
-    int size = 0;
-    while(i < content.size()){
-        if((content[i] == ' ' || content[i] == '\n') && argument != ""){
-            arguments.insert(arguments.begin() + index + size++, argument);
-            argument = "";
-        }
-        else if(!(content[i] == ' ' || content[i] == '\n')){ argument += content[i];}
-        i++;
-    }
+    if(is_file(BUILTIN)){ load(BUILTIN); }
 }
 
 // parse the arguments
 void Lexer::parse(){
     while(index < arguments.size()){
-        std::cout << arguments[index] << std::endl; 
         if(commands.find(arguments[index]) != commands.end()){
             Command command = commands[arguments[index]];
             // command doesnt have enough arguments
@@ -38,7 +22,7 @@ void Lexer::parse(){
             else{  }
         }
         index++;
-    } 
+    }
 }
 
 // overwrite the path
@@ -65,4 +49,21 @@ std::string Lexer::read_content(std::string filename){
         file.close();
     }
     return content;
+}
+
+// get simplified path Users/kostia/home/..
+std::string Lexer::clean_path(std::string& path){
+    // loop through the path string
+    size_t i = 0;
+    size_t last_path_change = 0; 
+    while(i < path.size()){
+        // trying to find ../ pattern
+        if(i+2 < path.size() && path[i] == '/' && path[i+1] == '.' && path[i+2] == '.'){
+            path.erase(path.begin()+last_path_change,path.begin()+ i+3);
+            i = 0;
+        } 
+        if(path[i] == '/'){ last_path_change = i; }
+        i++;
+    }
+    return path;
 }
