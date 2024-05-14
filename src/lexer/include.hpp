@@ -33,6 +33,7 @@ class Lexer{
 
         size_t index = 0;
         size_t save_index = 0;
+        size_t save_command_index = 0;
 
         void include_builtin();
         bool overwrite(std::string path);
@@ -54,6 +55,8 @@ class Lexer{
         std::string get_cwd(){ return (std::__fs::filesystem::current_path()).string(); }
 
         std::string clean_path(std::string& path); 
+        void add_commands(std::vector<std::string> bash_code);
+
 
         void help();
         void get_all_files();
@@ -61,6 +64,7 @@ class Lexer{
         void run_bash();
         void save();
         void save_exe();
+        void save_command();
         void load();
         void load(std::string directory);
 
@@ -72,6 +76,7 @@ class Lexer{
             {"@l",    { 1, "<file>",            "Loads the given file",                   true, [this](){ load(); }}},
             {"@s",    { 1, "<as>",              "Saves the given bash code as a file from a current directory",     true, [this](){ save(); }}},
             {"@se",   { 1, "<as>",              "Saves the given bash code as a file from a executable directory",  true, [this](){ save_exe(); }}},
+            {"@sc",   { 3, "<as> <number of commands> ... <description>","Saves the given bash code as a command",  true, [this](){ save_command(); }}},
         };
 
     public:

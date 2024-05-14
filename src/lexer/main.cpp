@@ -3,9 +3,9 @@
 // lexer intilizer
 Lexer::Lexer(std::vector<std::string> arguments){
     this->arguments = arguments;
-    for(std::string argument : arguments){ save_arguments.push_back(argument); }
     cwd = get_cwd();
     if(is_file(BUILTIN)){ load(BUILTIN); }
+    for(std::string argument : this->arguments){ save_arguments.push_back(argument); }
 }
 
 // parse the arguments
@@ -66,4 +66,9 @@ std::string Lexer::clean_path(std::string& path){
         i++;
     }
     return path;
+}
+
+// adds the commands to the arguments
+void Lexer::add_commands(std::vector<std::string> bash_code){
+    
 }

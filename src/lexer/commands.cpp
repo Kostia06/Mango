@@ -1,5 +1,6 @@
 #include "include.hpp"
 
+
 // print all of the commands
 void Lexer::help(){
     for(const auto& pair : commands) {
@@ -78,6 +79,33 @@ void Lexer::save_exe(){
     index--;
 }
 
+// saves the bash code as a command
+void Lexer::save_command(){
+    std::string name = arguments[++index];
+    // number of commands
+    size_t number_of_parameters = 0;
+    std::string number_of_parameters_str = arguments[++index];
+    try{number_of_parameters = std::stoi(number_of_parameters_str); }
+    catch(...){ error("Failed to convert the number of commands to a number"); }
+    if(number_of_parameters < 0){ error("Number of commands should be greater than or equal to 0"); }
+    // get the amount of commands
+    if(!enough_arguments(number_of_parameters + 1)){ error("Not enough arguments for the number of commands and description for @"+name); }
+    std::string parameters = "";
+    for(size_t i = 0; i < number_of_parameters; i++){ parameters += "<" + arguments[++index] + "> "; }
+    // get the description
+    std::string description = arguments[++index];
+    // remove the arguments
+    arguments.erase(arguments.begin() + index - 3 + number_of_parameters, arguments.begin() + index+1);
+    // get the bash code
+    std::vector<std::string> bash_code;
+    int i = save_command_index;
+    for(; save_arguments[i] != "@sc"; i++){ bash_code.push_back(save_arguments[i]); }
+    save_command_index = i+2;
+    index-=2;
+    commands["@" + name] = (Command){ number_of_parameters, parameters, description, false, [this, bash_code](){ add_commands(bash_code); } };
+    index--;
+
+}
 // loads the commands
 void Lexer::load(){
     std::string directory = arguments[++index];
@@ -90,6 +118,10 @@ void Lexer::load(){
     int i = 0;
     int size = 0;
     while(i < content.size()){
+        if(content[i] == '\"' && argument == ""){
+            while(content[++i] != '\"'){ argument += content[i]; }
+            arguments.insert(arguments.begin() + index + size++, "\""+argument+"\"");
+        }
         if((content[i] == ' ' || content[i] == '\n') && argument != ""){
             arguments.insert(arguments.begin() + index + size++, argument);
             argument = "";
@@ -108,7 +140,13 @@ void Lexer::load(std::string directory){
     std::string argument = "";
     int i = 0;
     int size = 0;
-    while(i < content.size()){
+    while(i < content.size()){        
+        if(content[i] == '\"' && argument == ""){
+            while(content[++i] != '\"'){ argument += content[i]; }
+            arguments.insert(arguments.begin() + index + size++, "\""+argument+"\"");
+            argument = "";
+            i++;
+        }
         if((content[i] == ' ' || content[i] == '\n') && argument != ""){
             arguments.insert(arguments.begin() + index + size++, argument);
             argument = "";
