@@ -45,7 +45,10 @@ void Lexer::change_cwd(){
 void Lexer::run_bash(){
     std::string code = "";
     int i = 0;
-    while(i < index){ code += arguments[i++] + " "; }
+    while(i < index){ 
+        if(arguments[i].find(" ") != std::string::npos){ code += "\"" + arguments[i++] + "\" "; }
+        else{ code += arguments[i++] + " "; }
+    }
     if(system(code.c_str())){ error("Bash Code failed to run \""+code +"\""); }
     arguments.erase(arguments.begin() + index , arguments.begin() + index+1);
     index--;
@@ -110,10 +113,9 @@ void Lexer::save_command(){
     // remove the arguments
     arguments.erase(arguments.begin() + index - 3 - number_of_parameters - bash_code.size(), arguments.begin() + index+1);
     save_command_index = i+2;
-    index-=2;
+    index -= 3 + number_of_parameters + bash_code.size(); 
     commands["@" + name] = (Command){ number_of_parameters, parameters, description, [this, bash_code, number_of_parameters](){ add_commands(bash_code, number_of_parameters); }};
     index--;
-
 }
 // loads the commands
 void Lexer::load(){
