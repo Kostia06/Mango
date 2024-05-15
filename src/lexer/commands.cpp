@@ -95,7 +95,7 @@ void Lexer::save_command(){
     // get the description
     std::string description = arguments[++index];
     // remove the arguments
-    arguments.erase(arguments.begin() + index - 3 + number_of_parameters, arguments.begin() + index+1);
+    arguments.erase(arguments.begin() + index - 3 - number_of_parameters, arguments.begin() + index+1);
     // get the bash code
     std::vector<std::string> bash_code;
     int i = save_command_index;
