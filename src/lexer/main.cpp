@@ -11,6 +11,7 @@ Lexer::Lexer(std::vector<std::string> arguments){
 // parse the arguments
 void Lexer::parse(){
     while(index < arguments.size()){
+        std::cout << "Index: " << index << " " << arguments[index] << std::endl;
         if(commands.find(arguments[index]) != commands.end()){
             Command command = commands[arguments[index]];
             // command doesnt have enough arguments
@@ -18,8 +19,7 @@ void Lexer::parse(){
                 error("Not enought arguments for " + arguments[index]);
             }
 
-            if(command.builtin){ command.function(); }
-            else{  }
+            command.function();
         }
         index++;
     }
@@ -69,6 +69,24 @@ std::string Lexer::clean_path(std::string& path){
 }
 
 // adds the commands to the arguments
-void Lexer::add_commands(std::vector<std::string> bash_code){
-    
+void Lexer::add_commands(std::vector<std::string> bash_code, size_t number_of_parameters){
+    std::vector<std::string> parameters;
+    for(size_t i = 0; i < number_of_parameters; i++){ parameters.push_back(this->arguments[++index]); }
+    // erasing the arguments
+    arguments.erase(arguments.begin() + index - number_of_parameters , arguments.begin() + index+1);
+    index -= number_of_parameters;
+    // importing the code
+    size_t i = index;
+    for(std::string code: bash_code){
+        if(code[0] == '@'){
+            size_t parameter_index = 0;
+            try{ 
+                parameter_index = std::stoi(code.substr(1));
+                code = parameters[parameter_index];
+            }
+            catch(...){}
+        }
+        arguments.insert(arguments.begin() + (i++), code);
+    }
+    index--;
 }

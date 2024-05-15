@@ -20,7 +20,7 @@ void Lexer::get_all_files(){
     std::filesystem::path path(directory);
     int i = 0;
     index -= 2;
-
+    // iterate through the directory
     for(const auto& entry : std::filesystem::recursive_directory_iterator(path)){
         if(std::filesystem::is_regular_file(entry)) {
             if (type.size() > entry.path().string().size()){ continue; };
@@ -99,10 +99,19 @@ void Lexer::save_command(){
     // get the bash code
     std::vector<std::string> bash_code;
     int i = save_command_index;
-    for(; save_arguments[i] != "@sc"; i++){ bash_code.push_back(save_arguments[i]); }
+    for(; save_arguments[i] != "@sc"; i++){ 
+        if(save_arguments[i][0] == '@'){
+            std::string possible_parameter = save_arguments[i].substr(1);
+            size_t parameter_index = 0;
+            try{ parameter_index = std::stoi(possible_parameter); }
+            catch(...){ error("Failed to convert the parameter to a number in @"+name); }
+            if(parameter_index >= number_of_parameters){ error("Parameter index is greater than the number of parameters in @"+name); }
+        }
+        bash_code.push_back(save_arguments[i]); 
+    }
     save_command_index = i+2;
     index-=2;
-    commands["@" + name] = (Command){ number_of_parameters, parameters, description, false, [this, bash_code](){ add_commands(bash_code); } };
+    commands["@" + name] = (Command){ number_of_parameters, parameters, description, [this, bash_code, number_of_parameters](){ add_commands(bash_code, number_of_parameters); }};
     index--;
 
 }

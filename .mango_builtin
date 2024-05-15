@@ -1,4 +1,4 @@
 git add .             &&
-git commit -m @1      &&
-git push @2 @3
+git commit -m @0      &&
+git push @1 @2
 @sc push 3 msg origin master "pushes code to the git hub"

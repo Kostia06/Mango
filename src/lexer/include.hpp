@@ -19,7 +19,6 @@ typedef struct {
     size_t usage_size;
     std::string usage;
     std::string description;
-    bool builtin;
     std::function<void()> function;
     std::string bash;
 } Command;
@@ -55,7 +54,7 @@ class Lexer{
         std::string get_cwd(){ return (std::__fs::filesystem::current_path()).string(); }
 
         std::string clean_path(std::string& path); 
-        void add_commands(std::vector<std::string> bash_code);
+        void add_commands(std::vector<std::string> bash_code, size_t number_of_parameters);
 
 
         void help();
@@ -69,14 +68,14 @@ class Lexer{
         void load(std::string directory);
 
         std::map<std::string, Command> commands{
-            {"@help", { 0,  "",                 "Gives a list of all useful commands",    true, [this](){ help(); }}},
-            {"@f",    { 2, "<dir> <file type>", "Gets all files from <dir>",              true, [this](){ get_all_files(); }}},
-            {"@ccwd", { 1, "<dir>",             "Change the current working directory",   true, [this](){ change_cwd();   }}},
-            {"@r",    { 0, "",                  "Runs the given bash code",               true, [this](){ run_bash(); }}},
-            {"@l",    { 1, "<file>",            "Loads the given file",                   true, [this](){ load(); }}},
-            {"@s",    { 1, "<as>",              "Saves the given bash code as a file from a current directory",     true, [this](){ save(); }}},
-            {"@se",   { 1, "<as>",              "Saves the given bash code as a file from a executable directory",  true, [this](){ save_exe(); }}},
-            {"@sc",   { 3, "<as> <number of commands> ... <description>","Saves the given bash code as a command",  true, [this](){ save_command(); }}},
+            {"@help", { 0,  "",                 "Gives a list of all useful commands",  [this](){ help(); }}},
+            {"@f",    { 2, "<dir> <file type>", "Gets all files from <dir>",            [this](){ get_all_files(); }}},
+            {"@ccwd", { 1, "<dir>",             "Change the current working directory", [this](){ change_cwd();   }}},
+            {"@r",    { 0, "",                  "Runs the given bash code",             [this](){ run_bash(); }}},
+            {"@l",    { 1, "<file>",            "Loads the given file",                 [this](){ load(); }}},
+            {"@s",    { 1, "<as>",              "Saves the given bash code as a file from a current directory",     [this](){ save(); }}},
+            {"@se",   { 1, "<as>",              "Saves the given bash code as a file from a executable directory",  [this](){ save_exe(); }}},
+            {"@sc",   { 3, "<as> <number of commands> ... <description>","Saves the given bash code as a command",  [this](){ save_command(); }}},
         };
 
     public:
