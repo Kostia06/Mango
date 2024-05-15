@@ -94,8 +94,6 @@ void Lexer::save_command(){
     for(size_t i = 0; i < number_of_parameters; i++){ parameters += "<" + arguments[++index] + "> "; }
     // get the description
     std::string description = arguments[++index];
-    // remove the arguments
-    arguments.erase(arguments.begin() + index - 3 - number_of_parameters, arguments.begin() + index+1);
     // get the bash code
     std::vector<std::string> bash_code;
     int i = save_command_index;
@@ -109,6 +107,8 @@ void Lexer::save_command(){
         }
         bash_code.push_back(save_arguments[i]); 
     }
+    // remove the arguments
+    arguments.erase(arguments.begin() + index - 3 - number_of_parameters - bash_code.size(), arguments.begin() + index+1);
     save_command_index = i+2;
     index-=2;
     commands["@" + name] = (Command){ number_of_parameters, parameters, description, [this, bash_code, number_of_parameters](){ add_commands(bash_code, number_of_parameters); }};
