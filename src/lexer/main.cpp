@@ -4,14 +4,17 @@
 Lexer::Lexer(std::vector<std::string> arguments){
     this->arguments = arguments;
     cwd = get_cwd();
+    if(is_file(DEFAULT) && this->arguments.size() == 0){ load(DEFAULT); }
     if(is_file(BUILTIN)){ load(BUILTIN); }
-    if(is_file(DEFAULT)){ load(DEFAULT); }
     for(std::string argument : this->arguments){ save_arguments.push_back(argument); }
 }
 
 // parse the arguments
 void Lexer::parse(){
+    // for(std::string arg: arguments){ std::cout << arg << " "; }
+    // std::cout << std::endl;
     while(index < arguments.size()){
+        //std::cout << "Index: " << index <<  "\t" << arguments[index] << std::endl;
         if(commands.find(arguments[index]) != commands.end()){
             Command command = commands[arguments[index]];
             // command doesnt have enough arguments

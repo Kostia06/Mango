@@ -50,8 +50,8 @@ void Lexer::run_bash(){
         else{ code += arguments[i++] + " "; }
     }
     if(system(code.c_str())){ error("Bash Code failed to run \""+code +"\""); }
-    arguments.erase(arguments.begin() + index , arguments.begin() + index+1);
-    index--;
+    arguments.erase(arguments.begin() , arguments.begin() + index+1);
+    index = 0;
 }
 
 // saves the bash code from a current path
