@@ -11,7 +11,6 @@ Lexer::Lexer(std::vector<std::string> arguments){
 // parse the arguments
 void Lexer::parse(){
     while(index < arguments.size()){
-        std::cout << "Index: " << index << " " << arguments[index] << std::endl;
         if(commands.find(arguments[index]) != commands.end()){
             Command command = commands[arguments[index]];
             // command doesnt have enough arguments

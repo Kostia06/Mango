@@ -46,7 +46,7 @@ void Lexer::run_bash(){
     std::string code = "";
     int i = 0;
     while(i < index){ code += arguments[i++] + " "; }
-    if(system(code.c_str())){ error("Bash Code failed to run"); }
+    if(system(code.c_str())){ error("Bash Code failed to run \""+code +"\""); }
     arguments.erase(arguments.begin() + index , arguments.begin() + index+1);
     index--;
 }
