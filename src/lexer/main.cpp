@@ -69,7 +69,6 @@ std::string Lexer::clean_path(std::string& path){
 
 // adds the commands to the arguments
 void Lexer::add_commands(std::vector<std::string> bash_code, size_t number_of_parameters){
-    for(std::string argument : arguments){ std::cout << argument << " "; }
     std::vector<std::string> parameters;
     for(size_t i = 0; i < number_of_parameters; i++){ parameters.push_back(this->arguments[++index]); }
     // erasing the arguments
