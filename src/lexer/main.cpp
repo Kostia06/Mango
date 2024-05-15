@@ -5,6 +5,7 @@ Lexer::Lexer(std::vector<std::string> arguments){
     this->arguments = arguments;
     cwd = get_cwd();
     if(is_file(BUILTIN)){ load(BUILTIN); }
+    if(is_file(DEFAULT)){ load(DEFAULT); }
     for(std::string argument : this->arguments){ save_arguments.push_back(argument); }
 }
 

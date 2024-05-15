@@ -14,6 +14,7 @@
 #define RESET "\033[0m"
 
 #define BUILTIN ".mango_builtin"
+#define DEFAULT ".mango"
 
 typedef struct {
     size_t usage_size;
